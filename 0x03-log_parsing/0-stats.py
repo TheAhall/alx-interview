@@ -1,50 +1,51 @@
 #!/usr/bin/python3
 """
-log parsing
+Log parsing script that reads from stdin and computes metrics.
 """
 
 import sys
-import re
 
+def print_stats(total_size, status_codes):
+    """Prints the accumulated metrics."""
+    print("File size: {}".format(total_size))
+    for code in sorted(status_codes):
+        if status_codes[code] > 0:
+            print("{}: {}".format(code, status_codes[code]))
 
-def output(log: dict) -> None:
-    """
-    helper function to display stats
-    """
-    print("File size: {}".format(log["file_size"]))
-    for code in sorted(log["code_frequency"]):
-        if log["code_frequency"][code]:
-            print("{}: {}".format(code, log["code_frequency"][code]))
-
-
-if __name__ == "__main__":
-    regex = re.compile(
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+\] "GET /projects/260 HTTP/1.1" (.{3}) (\d+)')  # nopep8
-
+def log_parsing():
+    """Parses logs from stdin and computes metrics."""
+    total_size = 0
+    status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
     line_count = 0
-    log = {}
-    log["file_size"] = 0
-    log["code_frequency"] = {
-        str(code): 0 for code in [
-            200, 301, 400, 401, 403, 404, 405, 500]}
 
     try:
         for line in sys.stdin:
-            line = line.strip()
-            match = regex.fullmatch(line)
-            if (match):
-                line_count += 1
-                code = match.group(1)
-                file_size = int(match.group(2))
+            line_count += 1
+            parts = line.split()
 
-                # File size
-                log["file_size"] += file_size
+            if len(parts) >= 7:
+                # Extract file size and status code
+                try:
+                    file_size = int(parts[-1])
+                    status_code = int(parts[-2])
 
-                # status code
-                if (code.isdecimal()):
-                    log["code_frequency"][code] += 1
+                    total_size += file_size
 
-                if (line_count % 10 == 0):
-                    output(log)
-    finally:
-        output(log)
+                    if status_code in status_codes:
+                        status_codes[status_code] += 1
+
+                except ValueError:
+                    continue
+
+            # Print stats every 10 lines
+            if line_count % 10 == 0:
+                print_stats(total_size, status_codes)
+
+    except KeyboardInterrupt:
+        print_stats(total_size, status_codes)
+        raise
+
+    print_stats(total_size, status_codes)
+
+if __name__ == "__main__":
+    log_parsing()
