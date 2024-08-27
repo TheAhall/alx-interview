@@ -1,53 +1,151 @@
 #!/usr/bin/python3
 """
-N queens
+The N queens puzzle is the challenge of placing N
+non-attacking queens on an N×N chessboard.
+
+TODO:
+    * Write a program that solves the N queens problem.
 """
 
-import sys
 
-if len(sys.argv) != 2:
-    print('Usage: nqueens N')
-    exit(1)
+def queens(chessBoard, row, majestyz, resolve):
+    """
+    Args:
+        chessBoard (list)
+        row (int)
+        majestyz (int)
+        resolve (list)
 
-try:
-    n_q = int(sys.argv[1])
-except ValueError:
-    print('N must be a number')
-    exit(1)
+    Returns:
+        resolve (list)
+    """
+    if majestyz == len(chessBoard):
+        resolve.append(extract(chessBoard))
+        return (resolve)
 
-if n_q < 4:
-    print('N must be at least 4')
-    exit(1)
-
-
-def solve_nqueens(n):
-    '''self descriptive'''
-    if n == 0:
-        return [[]]
-    inner_solution = solve_nqueens(n - 1)
-    return [solution + [(n, i + 1)]
-            for i in range(n_q)
-            for solution in inner_solution
-            if safe_queen((n, i + 1), solution)]
+    for col in range(len(chessBoard)):
+        if chessBoard[row][col] == -1:
+            demo = copyBoard(chessBoard)
+            demo[row][col] = 1
+            cancel(demo, row, col)
+            resolve = queens(demo, row + 1, majestyz + 1, resolve)
+    return (resolve)
 
 
-def attack_queen(square, queen):
-    '''self descriptive'''
-    (row1, col1) = square
-    (row2, col2) = queen
-    return (row1 == row2) or (col1 == col2) or\
-        abs(row1 - row2) == abs(col1 - col2)
+def cancel(chessBoard, row, col):
+    """
+    Cancels out vulnerable positions for the queen
+
+    Args:
+        chessBoard (list)
+        row (int)
+        col (int)
+    """
+    length = len(chessBoard)
+    """Cancel forward positions"""
+    for c in range(col + 1, length):
+        chessBoard[row][c] = 0
+    """Cancel backwards positions"""
+    for c in range(col - 1, -1, -1):
+        chessBoard[row][c] = 0
+    """Cancel down positions"""
+    for r in range(row + 1, length):
+        chessBoard[r][col] = 0
+    """Cancel up positions"""
+    for r in range(row - 1, -1, 1):
+        chessBoard[r][col] = 0
+    """Cancel right downward diagonal positions"""
+    c = col + 1
+    for r in range(row + 1, length):
+        if c >= length:
+            break
+        chessBoard[r][c] = 0
+        c += 1
+    """Cancel left upward diagonal positions"""
+    c = col - 1
+    for r in range(row - 1, -1, -1):
+        if c < 0:
+            break
+        chessBoard[r][c] = 0
+        c -= 1
+    """Cancel right upward diagonal positions"""
+    c = col + 1
+    for r in range(row - 1, -1, -1):
+        if c >= length:
+            break
+        chessBoard[r][c] = 0
+        c += 1
+    """Cancel left downward diagonal positions"""
+    c = col - 1
+    for r in range(row + 1, length):
+        if c < 0:
+            break
+        chessBoard[r][c] = 0
+        c -= 1
 
 
-def safe_queen(sqr, queens):
-    '''self descriptive'''
-    for queen in queens:
-        if attack_queen(sqr, queen):
-            return False
-    return True
+def chessBoard(N):
+    """
+    Create a board of size N * N
+    """
+    chessBoard = []
+
+    """Create rows"""
+    for row in range(N):
+        chessBoard.append([])
+
+    """Create columns"""
+    for row in chessBoard:
+        for n in range(N):
+            row.append(-1)
+
+    return (chessBoard)
 
 
-for answer in reversed(solve_nqueens(n_q)):
+def copyBoard(chessBoard):
+    """
+    make a copy of chessBoard
+    """
+    if type(chessBoard) == list:
+        """Recursively copy"""
+        return list(map(copyBoard, chessBoard))
+    return (chessBoard)
+
+
+def extract(chessBoard):
+    """
+    Extract the required outcome from the chess board
+    """
+    outcome = []
+    for row in range(len(chessBoard)):
+        for col in range(len(chessBoard)):
+            if chessBoard[row][col] == 1:
+                outcome.append([row, col])
+                break
+    return (outcome)
+
+
+def execute():
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: nqueens N")
+        sys.exit(1)
+    if sys.argv[1].isnumeric() is False:
+        print("N must be a number")
+        sys.exit(1)
+    if int(sys.argv[1]) < 4:
+        print("N must be at least 4")
+        sys.exit(1)
+
+    chess = chessBoard(int(sys.argv[1]))
+    resultMatrix = queens(chess, 0, 0, [])
+    for row in resultMatrix:
+        print(row)
+
+
+if __name__ == '__main__':
+    execute()
     result = []
     for p in [list(p) for p in answer]:
         result.append([i - 1 for i in p])
